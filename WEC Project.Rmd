@@ -1,0 +1,233 @@
+---
+title: "Wave Energy Convertors (WECs) in Sydney, Australia"
+author: "John Marchelos"
+class: "STA 9890"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{R code}
+#Read the data
+sydney <- read.csv("~/Baruch 2021-2022/Semester 2/STA 9890/WECs_DataSet/sydney_Data.csv", header=FALSE)
+
+#Standardize the data
+library(dplyr)
+sydney <- sydney %>% mutate(V1 = scale(sydney$V1))
+sydney <- sydney %>% mutate(V2 = scale(sydney$V2))
+sydney <- sydney %>%mutate(V3 = scale(sydney$V3))
+sydney <- sydney %>%mutate(V4 = scale(sydney$V4))
+sydney <- sydney %>%mutate(V5 = scale(sydney$V5))
+sydney <- sydney %>%mutate(V6 = scale(sydney$V6))
+sydney <- sydney %>%mutate(V7 = scale(sydney$V7))
+sydney <- sydney %>%mutate(V8 = scale(sydney$V8))
+sydney <- sydney %>%mutate(V9 = scale(sydney$V9))
+sydney <- sydney %>% mutate(V10 = scale(sydney$V10))
+sydney <- sydney %>% mutate(V11 = scale(sydney$V11))
+sydney <- sydney %>%mutate(V12 = scale(sydney$V12))
+sydney <- sydney %>%mutate(V13 = scale(sydney$V13))
+sydney <- sydney %>%mutate(V14 = scale(sydney$V14))
+sydney <- sydney %>%mutate(V15 = scale(sydney$V15))
+sydney <- sydney %>%mutate(V16 = scale(sydney$V16))
+sydney <- sydney %>%mutate(V17 = scale(sydney$V17))
+sydney <- sydney %>%mutate(V18 = scale(sydney$V18))
+sydney <- sydney %>% mutate(V19 = scale(sydney$V19))
+sydney <- sydney %>% mutate(V20 = scale(sydney$V20))
+sydney <- sydney %>%mutate(V21 = scale(sydney$V21))
+sydney <- sydney %>%mutate(V22 = scale(sydney$V22))
+sydney <- sydney %>%mutate(V23 = scale(sydney$V23))
+sydney <- sydney %>%mutate(V24 = scale(sydney$V24))
+sydney <- sydney %>%mutate(V25 = scale(sydney$V25))
+sydney <- sydney %>%mutate(V26 = scale(sydney$V26))
+sydney <- sydney %>%mutate(V27 = scale(sydney$V27))
+sydney <- sydney %>% mutate(V28 = scale(sydney$V28))
+sydney <- sydney %>% mutate(V29 = scale(sydney$V29))
+sydney <- sydney %>%mutate(V30 = scale(sydney$V30))
+sydney <- sydney %>%mutate(V31 = scale(sydney$V31))
+sydney <- sydney %>%mutate(V32 = scale(sydney$V32))
+sydney <- sydney %>%mutate(V33 = scale(sydney$V33))
+sydney <- sydney %>%mutate(V34 = scale(sydney$V34))
+sydney <- sydney %>%mutate(V35 = scale(sydney$V35))
+sydney <- sydney %>%mutate(V36 = scale(sydney$V36))
+sydney <- sydney %>%mutate(V37 = scale(sydney$V37))
+sydney <- sydney %>%mutate(V38 = scale(sydney$V38))
+sydney <- sydney %>%mutate(V39 = scale(sydney$V39))
+sydney <- sydney %>%mutate(V40 = scale(sydney$V40))
+sydney <- sydney %>%mutate(V41 = scale(sydney$V41))
+sydney <- sydney %>%mutate(V42 = scale(sydney$V42))
+sydney <- sydney %>%mutate(V43 = scale(sydney$V43))
+sydney <- sydney %>%mutate(V44 = scale(sydney$V44))
+sydney <- sydney %>%mutate(V45 = scale(sydney$V45))
+sydney <- sydney %>%mutate(V46 = scale(sydney$V46))
+sydney <- sydney %>%mutate(V47 = scale(sydney$V47))
+sydney <- sydney %>%mutate(V48 = scale(sydney$V48))
+
+#Form Matrices and loop counter
+library(caTools)
+i = 1
+lss_rsq_mtx = matrix(,100,2)
+rdg_rsq_mtx = matrix(,100,2)
+fst_rsq_mtx = matrix(,100,2)
+
+#Lasso Loop. Returns matrix with R-sq Test and Train values
+while (i < 101){
+sort= sample.split(sydney$V49,SplitRatio = 0.80)
+sydTrain <- filter(sydney,sort==TRUE)
+sydTest <- filter(sydney,sort==FALSE)
+
+library(glmnet)
+yTrain <- sydTrain$V49
+xTrain <- data.matrix(sydTrain[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+yTest <- sydTest$V49
+xTest <- data.matrix(sydTest[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+
+lss.cv_Train <- cv.glmnet(xTrain,yTrain,alpha=1)
+lam <- lss.cv_Train$lambda.min
+lss_Train <- glmnet(xTrain,yTrain,alpha=1,lambda = lam, standardize = TRUE)
+
+lss.cv_Test <- cv.glmnet(xTest,yTest,alpha=1)
+lamTest <- lss.cv_Test$lambda.min
+lss_Test <- glmnet(xTest,yTest,alpha=1,lambda = lamTest, standardize = TRUE)
+
+lss_pred_Train <- predict(lss_Train,s=lam,newx = xTrain)
+lss_pred_Test <- predict(lss_Test,s=lamTest,newx = xTest)
+
+#10-fold CV curve for Lasso 
+if (i == 50){
+  par(mfrow = c(1,2))
+  plot(lss.cv_Train)
+  plot(lss.cv_Test)
+}
+
+lssR_sq_Train<- 1 - sum((yTrain-lss_pred_Train)^2)/sum((yTrain-mean(yTrain))^2)
+lssR_sq_Test<- 1 - sum((yTest-lss_pred_Test)^2)/sum((yTest-mean(yTest))^2)
+
+lss_rsq_mtx[i,1]=lssR_sq_Train
+lss_rsq_mtx[i,2]=lssR_sq_Test
+
+i=sum(i,1)
+}
+
+#Ridge loop. Returns matrix with R-sq Test and Train values.
+i = 1
+while (i < 101) {
+sort= sample.split(sydney$V49,SplitRatio = 0.80)
+sydTrain <- filter(sydney,sort==TRUE)
+sydTest <- filter(sydney,sort==FALSE)
+
+library(glmnet)
+yTrain <- sydTrain$V49
+xTrain <- data.matrix(sydTrain[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+yTest <- sydTest$V49
+xTest <- data.matrix(sydTest[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+
+rdg.cv_Train <- cv.glmnet(xTrain,yTrain,alpha=0)
+lamR <- rdg.cv_Train$lambda.min
+rdg_Train <- glmnet(xTrain,yTrain,alpha=0,lambda = lamR)
+rdg.cv_Test <- cv.glmnet(xTest,yTest,alpha=0)
+lamR_Test <- rdg.cv_Test$lambda.min
+rdg_Test <- glmnet(xTest,yTest,alpha=0,lambda = lamR_Test)
+
+#10-fold CV curve for Ridge 
+if (i == 50){
+  par(mfrow = c(1,2))
+  plot(rdg.cv_Train)
+  plot(rdg.cv_Test)
+}
+
+rdg_pred_Train <- predict(rdg_Train,s=lamR,newx = xTrain)
+rdg_pred_Test <- predict(rdg_Test,s=lamR_Test,newx = xTest)
+
+RdgR_sq_Train <- 1 - sum((yTrain-rdg_pred_Train)^2)/sum((yTrain-mean(yTrain))^2)
+RdgR_sq_Test <- 1 - sum((yTest-rdg_pred_Test)^2)/sum((yTest-mean(yTest))^2)
+
+
+rdg_rsq_mtx[i,1]=RdgR_sq_Train
+rdg_rsq_mtx[i,2]=RdgR_sq_Test
+
+i=sum(i,1)
+}
+
+#Forest loop. Returns matrix with R-sq Test and Train values.
+i = 1
+while (i < 101) {
+sort= sample.split(sydney$V49,SplitRatio = 0.80)
+sydTrain <- filter(sydney,sort==TRUE)
+sydTest <- filter(sydney,sort==FALSE)
+
+library(glmnet)
+yTrain <- sydTrain$V49
+xTrain <- data.matrix(sydTrain[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+yTest <- sydTest$V49
+xTest <- data.matrix(sydTest[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+
+library(randomForest)
+#trees= (57600)^.5 #45 minutes to run one Train
+trees = 50 #9 minutes to run one Train
+rnd_Forest_Train <- randomForest(xTrain,yTrain, ntree = trees)
+rnd_Forest_Test <- randomForest(xTest,yTest, ntree = trees)
+
+fst_rsq_mtx[i,1]=rnd_Forest_Train$rsq[50]
+fst_rsq_mtx[i,2]=rnd_Forest_Test$rsq[50]
+
+i=sum(i,1)
+}
+
+#Makes matrices data frames
+lss_rsq_data <- data.frame(lss_rsq_mtx)
+rdg_rsq_data <- data.frame(rdg_rsq_mtx)
+fst_rsq_data <- data.frame(fst_rsq_mtx)
+
+#Rename variable in data frames
+lss_rsq_data = rename(lss_rsq_data,Train = X1)
+lss_rsq_data = rename(lss_rsq_data,Test= X2)
+rdg_rsq_data = rename(rdg_rsq_data,Train = X1)
+rdg_rsq_data = rename(rdg_rsq_data,Test= X2)
+fst_rsq_data = rename(fst_rsq_data,Train= X1)
+fst_rsq_data = rename(fst_rsq_data,Test= X2)
+
+#Boxplots of all three methods with R-test and R-train
+#Lasso
+par(mfrow = c(1,2))
+boxplot(lss_rsq_data$Train,xlab = c("Train"),ylab= c("R-squared"),main = c("Lasso"))
+boxplot(lss_rsq_data$Test,xlab= c("Test"),ylab = c("R-squared"),main = c("Lasso"))
+
+#Ridge
+par(mfrow = c(1,2))
+boxplot(rdg_rsq_data$Train,xlab = c("Train"),ylab= c("R-squared"),main = c("Ridge"))
+boxplot(rdg_rsq_data$Test,xlab= c("Test"),ylab = c("R-squared"),main = c("Ridge"))
+
+#Forest
+par(mfrow = c(1,2))
+boxplot(fst_rsq_data$Train,xlab = c("Train"),ylab= c("R-squared"),main = c("Forest"))
+boxplot(fst_rsq_data$Test,xlab= c("Test"),ylab = c("R-squared"),main = c("Forest"))
+
+
+#Lasso, Ridge, Forest full data CV regression
+yFull <- sydney$V49
+xFull <- data.matrix(sydney[,c('V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48')])
+
+lss.cv_Full <- cv.glmnet(xFull,yFull,alpha=1)
+lamFull <- lss.cv_Full$lambda.min
+lss_Full <- glmnet(xFull,yFull,alpha=1,lambda = lamFull, standardize = TRUE)
+lss_pred_Full <- predict(lss_Full,s=lamFull,newx = xFull)
+lssR_sq_Full <- 1 - sum((yFull-lss_pred_Full)^2)/sum((yFull-mean(yFull))^2)
+
+rdg.cv_Full <- cv.glmnet(xFull,yFull,alpha=0)
+lamFullRdg <- rdg.cv_Full$lambda.min
+rdg_Full <- glmnet(xFull,yFull,alpha=0,lambda = lamFullRdg, standardize = TRUE)
+rdg_pred_Full <- predict(rdg_Full,s=lamFullRdg,newx = xFull)
+rdgR_sq_Full <- 1 - sum((yFull-rdg_pred_Full)^2)/sum((yFull-mean(yFull))^2)
+
+rnd_Forest_Full <- randomForest(xFull,yFull, ntree = trees)
+rnd_Forest_Full[50]$rsq
+#90% CI for R-squared Values
+
+lasso_quant <- quantile(lss_rsq_mtx, probs = c(0.05, 0.95))
+ridge_quant <- quantile(rdg_rsq_mtx, probs = c(0.05, 0.95))
+forest_quant <- quantile(fst_rsq_mtx, probs = c(0.05, 0.95))
+
+
+```
