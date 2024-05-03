@@ -1,7 +1,7 @@
 ---
-title: "Project 2 9797"
+title: "Breast Cancer METABRIC"
 author: "John Marchelos"
-date: "2022-11-29"
+
 output: word_document
 ---
  
@@ -16,7 +16,6 @@ library(readxl)
 library(ggplot2)
 library(dplyr)
 library(tidyverse)
-'dataRot <- survival::rotterdam'
 dataCan <- Breast_Cancer_METABRIC <- read_excel("Baruch 2021-2022/Semester 3/STA 9797/Breast Cancer METABRIC.xlsx")
 dataCanChemo <- subset(dataCan, !is.na(dataCan$`Patient's Vital Status`))
 dataCanChemo <- subset(dataCanChemo, !is.na(dataCanChemo$Chemotherapy))
@@ -64,18 +63,16 @@ dataCanChemo$Chemotherapy <- sapply(dataCanChemo$Chemotherapy,as.numeric)
 #Chemo fit
 chemo.fit <- survfit(Surv(dataCanChemo$`Overall Survival (Months)`,dataCanChemo$`Patient's Vital Status`)~Chemotherapy,data=dataCanChemo)
                      
-'chemo.fit <- survfit(Surv(dtime,death)~chemo,data=dataRot)'
+
 
 #Lymph Node fit
 lymph.fit <- survfit(Surv(dataCanChemo$`Overall Survival (Months)`,dataCanChemo$`Patient's Vital Status`)~dataCanChemo$`Lymph nodes examined positive`,data=dataCanChemo)
-'grade.fit <- survfit(Surv(dtime,death)~grade,data=dataRot)'
+
 
 #Tumor Stage fit
 tumorstage.fit <- survfit(Surv(dataCanChemo$`Overall Survival (Months)`,dataCanChemo$`Patient's Vital Status`)~dataCanChemo$
 
-'recur.fit <- survfit(Surv(dtime,death)~recur,data=dataRot)'1
 
-meno.fit <- survfit(Surv(dtime,death)~meno,data=dataRot)
 
 ggsurvplot(
 fit = chemo.fit,
@@ -95,7 +92,7 @@ ylab = "Overall survival probability"
 covariates <- c("year","age","meno","size","grade","nodes","pgr","er","hormon","chemo","rtime","recur")
 univ_formulas <- sapply(covariates,function(x) as.formula(paste('Surv(dtime, death)~',x)))
 
-univ_models <- lapply(univ_formulas,function(x){coxph(x,data=dataRot)})
+univ_models <- lapply(univ_formulas,function(x){coxph(x,data=dataCan)})
 
 univ_results <- lapply(univ_models,function(x){
   x <- summary(x)
@@ -116,9 +113,9 @@ univ_results <- lapply(univ_models,function(x){
 res <- t(as.data.frame(univ_results, check.names = FALSE))
 as.data.frame(res)
 
-chemo.cox <- coxph(Surv(dtime,death) ~ chemo, data = dataRot)
+chemo.cox <- coxph(Surv(dtime,death) ~ chemo, data = dataCan)
 summary(chemo.cox)
-size.cox <- coxph(Surv(dtime,death) ~ size,data=dataRot)
+size.cox <- coxph(Surv(dtime,death) ~ size,data=dataCan)
 
 full.cox <- coxph(Surv(dtime,death)~ year + age + meno + size + grade + nodes + pgr + er + hormon + chemo + rtime + recur , data = dataRot)
 
