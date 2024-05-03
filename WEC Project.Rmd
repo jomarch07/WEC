@@ -1,7 +1,6 @@
 ---
 title: "Wave Energy Convertors (WECs) in Sydney, Australia"
 author: "John Marchelos"
-class: "STA 9890"
 output: word_document
 ---
 
