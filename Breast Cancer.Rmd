@@ -1,0 +1,125 @@
+---
+title: "Project 2 9797"
+author: "John Marchelos"
+date: "2022-11-29"
+output: word_document
+---
+ 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{Kaplan Meier Estimates}
+library("survival")
+library("survminer")
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+'dataRot <- survival::rotterdam'
+dataCan <- Breast_Cancer_METABRIC <- read_excel("Baruch 2021-2022/Semester 3/STA 9797/Breast Cancer METABRIC.xlsx")
+dataCanChemo <- subset(dataCan, !is.na(dataCan$`Patient's Vital Status`))
+dataCanChemo <- subset(dataCanChemo, !is.na(dataCanChemo$Chemotherapy))
+                       
+# Coding for Vital Status
+for(i in 1:length(dataCanChemo$`Patient's Vital Status`)){
+  if(dataCanChemo$`Patient's Vital Status`[i]=='Living'){
+    dataCanChemo$`Patient's Vital Status`[i]=1
+  }
+  else if(dataCanChemo$`Patient's Vital Status`[i]=='Died of Disease'){
+    dataCanChemo$`Patient's Vital Status`[i]=0
+  }
+  else if (dataCanChemo$`Patient's Vital Status`[i]=='Died of Other Causes'){
+     dataCanChemo$`Patient's Vital Status`[i]=1
+  }
+}
+dataCanChemo$`Patient's Vital Status` <- sapply(dataCanChemo$`Patient's Vital Status`,as.numeric)
+
+#Coding for Overall Survival Status
+for(i in 1:length(dataCanChemo$`Overall Survival Status`)){
+  if(dataCanChemo$`Overall Survival Status`[i]=='Living'){
+    dataCanChemo$`Overall Survival Status`[i]=1
+  }
+  else if(dataCanChemo$`Overall Survival Status`[i]=='Deceased'){
+    dataCanChemo$`Overall Survival Status`[i]=0
+  }
+}
+dataCanChemo$`Overall Survival Status` <- sapply(dataCanChemo$`Overall Survival Status`,as.numeric)
+
+
+#Coding for Chemo
+for(i in 1:length(dataCanChemo$Chemotherapy)){
+  if(dataCanChemo$Chemotherapy[i]=='No'){
+    dataCanChemo$Chemotherapy[i]=0
+  }
+  else if(dataCanChemo$Chemotherapy[i]=='Yes'){
+    dataCanChemo$Chemotherapy[i]=1
+  }
+  else{
+  }
+}
+dataCanChemo$Chemotherapy <- sapply(dataCanChemo$Chemotherapy,as.numeric)
+
+
+#Chemo fit
+chemo.fit <- survfit(Surv(dataCanChemo$`Overall Survival (Months)`,dataCanChemo$`Patient's Vital Status`)~Chemotherapy,data=dataCanChemo)
+                     
+'chemo.fit <- survfit(Surv(dtime,death)~chemo,data=dataRot)'
+
+#Lymph Node fit
+lymph.fit <- survfit(Surv(dataCanChemo$`Overall Survival (Months)`,dataCanChemo$`Patient's Vital Status`)~dataCanChemo$`Lymph nodes examined positive`,data=dataCanChemo)
+'grade.fit <- survfit(Surv(dtime,death)~grade,data=dataRot)'
+
+#Tumor Stage fit
+tumorstage.fit <- survfit(Surv(dataCanChemo$`Overall Survival (Months)`,dataCanChemo$`Patient's Vital Status`)~dataCanChemo$
+
+'recur.fit <- survfit(Surv(dtime,death)~recur,data=dataRot)'1
+
+meno.fit <- survfit(Surv(dtime,death)~meno,data=dataRot)
+
+ggsurvplot(
+fit = chemo.fit,
+data = rotterdam,
+pval=TRUE,
+conf.int = TRUE, # plot the confidence interval of the survival probability
+risk.table = TRUE, # draw the risk table below the graph
+surv.median.line = "hv",# draw the survival median line horizontally & vertically
+xlab = "Time",
+ylab = "Overall survival probability"
+)
+```
+
+
+```{Cox Model for each Univariate}
+#install.packages(c("survival","survminer"))
+covariates <- c("year","age","meno","size","grade","nodes","pgr","er","hormon","chemo","rtime","recur")
+univ_formulas <- sapply(covariates,function(x) as.formula(paste('Surv(dtime, death)~',x)))
+
+univ_models <- lapply(univ_formulas,function(x){coxph(x,data=dataRot)})
+
+univ_results <- lapply(univ_models,function(x){
+  x <- summary(x)
+   p.value<-signif(x$wald["pvalue"], digits=2)
+                          wald.test<-signif(x$wald["test"], digits=2)
+                          beta<-signif(x$coef[1], digits=2);#coeficient beta
+                          HR <-signif(x$coef[2], digits=2);#exp(beta)
+                          HR.confint.lower <- signif(x$conf.int[,"lower .95"], 2)
+                          HR.confint.upper <- signif(x$conf.int[,"upper .95"],2)
+                          HR <- paste0(HR, " (", 
+                                       HR.confint.lower, "-", HR.confint.upper, ")")
+                          res<-c(beta, HR, wald.test, p.value)
+                          names(res)<-c("beta", "HR (95% CI for HR)", "wald.test", 
+                                        "p.value")
+                          return(res)
+                          #return(exp(cbind(coef(x),confint(x))))
+                         })
+res <- t(as.data.frame(univ_results, check.names = FALSE))
+as.data.frame(res)
+
+chemo.cox <- coxph(Surv(dtime,death) ~ chemo, data = dataRot)
+summary(chemo.cox)
+size.cox <- coxph(Surv(dtime,death) ~ size,data=dataRot)
+
+full.cox <- coxph(Surv(dtime,death)~ year + age + meno + size + grade + nodes + pgr + er + hormon + chemo + rtime + recur , data = dataRot)
+
+```
